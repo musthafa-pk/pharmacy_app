@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pharmacy_app/Constants/appColors.dart';
+import 'package:pharmacy_app/views/Subscriptionspage.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../utils/utils.dart';
@@ -194,6 +195,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 Utils.logout(context);
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.local_offer),
+              title: const Text('Subscription'),
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => SubscriptionPage(),));
+              },
+            ),
           ],
         ),
       ),
@@ -221,7 +229,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const Divider(),
                 ListTile(
-                  leading: const Icon(Icons.phone, color: Colors.green),
+                  leading:  Icon(Icons.phone, color: PRIMARY_COLOR),
                   title: const Text('Call Us'),
                   subtitle: const Text('+91-1234567890'),
                   onTap: () {

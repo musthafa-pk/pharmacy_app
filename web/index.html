@@ -14,14 +14,17 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
+<!--  <base href="$FLUTTER_BASE_HREF">-->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="pharmacy partners.">
 
   <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="flutter-service-worker" content="disable">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="pharmacy_app">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
@@ -31,8 +34,20 @@
 
   <title>pharmacy_app</title>
   <link rel="manifest" href="manifest.json">
-</head>
-<body>
+  </head>
+  <body>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then((registration) => {
+          console.log("Service Worker registered:", registration);
+        })
+        .catch((error) => {
+          console.error("Service Worker registration failed:", error);
+        });
+    }
+</script>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

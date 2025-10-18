@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pharmacy_app/Constants/appColors.dart';
 import 'package:http/http.dart' as http;
 import 'package:pharmacy_app/res/app_url.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../model/notificationModel.dart';
 import '../utils/utils.dart';
@@ -29,12 +30,14 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   // Function to fetch notifications from the API
   Future<void> fetchNotifications() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userID = preferences.getString('userID');
     final url = Uri.parse(AppUrl.getNotifications);
     try {
       final response = await http.post(url,
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
-            "pharmacyId":4
+            "pharmacyId":int.parse(userID.toString())
           }),);
 
       if (response.statusCode == 200) {
@@ -59,13 +62,15 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   // Function to mark a notification as seen via API
   Future<void> markAsSeenAPI(int notificationId, int index) async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userID = preferences.getString('userID');
     final url = Uri.parse(AppUrl.seennotifi);
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          "pharmacyId": 4,
+          "pharmacyId": int.parse(userID.toString()),
           "notificationId": notificationId,
         }),
       );
@@ -107,7 +112,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ListTile(
                 leading: CircleAvatar(
                   backgroundColor: notification.seen
-                      ? Colors.green
+                      ? PRIMARY_COLOR
                       : Colors.blue,
                   child: Icon(
                     notification.seen

@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:pharmacy_app/views/RequestDelivery/RequestDelivery.dart';
 import 'package:pharmacy_app/views/settings.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../Constants/appColors.dart';
 import '../api/firebase_api.dart';
 import '../res/app_url.dart';
@@ -25,9 +27,11 @@ class _IndexPageState extends State<IndexPage> {
 
 
 
-  Future<List<Map<String, dynamic>>> fetchOrders(int chemistId) async {
+  Future<List<Map<String, dynamic>>> fetchOrders() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userID = preferences.getString('userID');
     String url = AppUrl.getorders;
-    final Map<String, dynamic> body = {'chemistId': chemistId};
+    final Map<String, dynamic> body = {'chemistId': int.parse(userID.toString())};
 
     try {
       final response = await http.post(
@@ -87,7 +91,7 @@ class _IndexPageState extends State<IndexPage> {
 
   void loadOrders() async {
     try {
-      final fetchedOrders = await fetchOrders(4); // Replace 4 with chemistId
+      final fetchedOrders = await fetchOrders(); // Replace 4 with chemistId
       setState(() {
         orders = fetchedOrders;
         filteredOrders = orders; // Initially, all orders are shown
@@ -117,7 +121,7 @@ class _IndexPageState extends State<IndexPage> {
   @override
   void initState() {
     super.initState();
-    FirebaseApi().storeToken(4);
+    FirebaseApi().storeToken();
     loadOrders(); // Fetch orders when the page loads
     searchController.addListener(() {
       filterOrders(searchController.text); // Filter orders when the text changes
@@ -134,6 +138,32 @@ class _IndexPageState extends State<IndexPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: TextColorWhite,
+      floatingActionButton: SizedBox(
+        width: MediaQuery.of(context).size.width/2,
+        child: InkWell(
+          onTap: (){
+            Navigator.push(context, MaterialPageRoute(builder: (context) => RequestOrderScreen(),));
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius:BorderRadius.circular(9),
+              border: Border.all(width: 1,color: PRIMARY_COLOR)
+            ),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Request Delivery',style: TextStyle(
+                        fontSize: 16,
+                      color: PRIMARY_COLOR
+                    ),),
+                    Icon(Icons.delivery_dining,color: PRIMARY_COLOR,)
+                  ],
+                ),
+              )),
+        ),
+      ),
       body: SafeArea(
         child:RefreshIndicator(
           color: PRIMARY_COLOR,
@@ -233,7 +263,7 @@ class _IndexPageState extends State<IndexPage> {
                                         style: TextStyle(fontWeight: FontWeight.bold),
                                       ),
                                       Text(('${order['user'] == null ? 'N/A' :order['user']}'),
-                                        style: const TextStyle(fontWeight: FontWeight.bold,color: Colors.green),
+                                        style:  TextStyle(fontWeight: FontWeight.bold,color:PRIMARY_COLOR),
                                       ),
                                     ],
                                   ),
@@ -245,7 +275,7 @@ class _IndexPageState extends State<IndexPage> {
                                         style: TextStyle(fontWeight: FontWeight.bold),
                                       ),
                                       Text(('${order['doctorName'] == null ? 'N/A' :order['doctorName']}'),
-                                        style: const TextStyle(fontWeight: FontWeight.bold,color: Colors.green),
+                                        style:  TextStyle(fontWeight: FontWeight.bold,color: PRIMARY_COLOR),
                                       ),
                                     ],
                                   ),
@@ -394,8 +424,6 @@ class _IndexPageState extends State<IndexPage> {
                                                   String status = 'packed'; // Status to change to
                                                   int salesId = order['sales_id'];
                                                   String userName = order['user'] ?? '';
-                                                  print('uuuuu$order');
-                                                  print('uuuuu$userName');
 
                                                   // Call the API to update the order status
                                                    updateOrderStatus(quotationId, status, salesId,userName);

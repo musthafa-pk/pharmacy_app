@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:pharmacy_app/res/app_url.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../Constants/appColors.dart';
 
 class ProductListPage extends StatefulWidget {
@@ -23,8 +24,10 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   Future<void> _fetchProducts() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userID = preferences.getString('userID');
      String url = AppUrl.getProudcuts; // Replace with your actual API URL
-    final Map<String, dynamic> body = {'pharmacy_id': 4}; // API body
+    final Map<String, dynamic> body = {'pharmacy_id': int.parse(userID.toString())}; // API body
 
     try {
       final response = await http.post(

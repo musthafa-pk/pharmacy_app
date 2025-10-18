@@ -3,9 +3,7 @@ import 'package:pharmacy_app/views/profilePage.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../Constants/appColors.dart';
 
-import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
-import '../../Constants/appColors.dart';
+
 
 class OrderFulfillmentPage extends StatefulWidget {
   @override

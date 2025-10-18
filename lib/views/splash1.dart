@@ -3,6 +3,7 @@ import 'package:lottie/lottie.dart';
 import 'package:pharmacy_app/utils/utils.dart';
 import 'package:pharmacy_app/views/homepage.dart';
 import 'package:pharmacy_app/views/loginPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Splash1 extends StatefulWidget {
   const Splash1({super.key});
@@ -41,7 +42,12 @@ class _Splash1State extends State<Splash1> with SingleTickerProviderStateMixin {
     // Start the animations
     _controller.forward();
        // Navigate to the next screen after a delay
-       Future.delayed(const Duration(seconds: 3), () {
+       Future.delayed(const Duration(seconds: 3), () async{
+         SharedPreferences preferences = await SharedPreferences.getInstance();
+         String? userID = await preferences.getString('userID');
+         if(userID != null){
+           Navigator.push(context, MaterialPageRoute(builder: (context) => HomePage(),));
+         }else
          Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage(),));
        });
   }

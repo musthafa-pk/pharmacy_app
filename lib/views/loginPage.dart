@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:pharmacy_app/RazorpayTest/DeliveryBoyScreen.dart';
 import 'package:pharmacy_app/utils/utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:pharmacy_app/views/homepage.dart';
 import 'package:pharmacy_app/views/forgotpassword/recoverPassword.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../Constants/appColors.dart';
 import '../api/firebase_api.dart';
 import '../res/app_url.dart';
@@ -92,22 +94,23 @@ class _LoginPageState extends State<LoginPage> {
 
           // Check if the response indicates success
           if (responseBody['success'] == true) {
+            final userData = responseBody['data'];
             if (rememberMe) {
+              // Extract and store user data from the response
+              await Utils.storage.write(key: 'userData', value: jsonEncode(userData));
+              print('local storage user data :${Utils.storage.read(key: 'userData')}');
+              SharedPreferences preferences = await SharedPreferences.getInstance();
+              preferences.setString('userID','${userData['id']}');
+              preferences.setBool('rememberme', rememberMe);
               // Save credentials securely if "Remember Me" is selected
               await Utils.storage.write(key: 'userId', value: userId);
               await Utils.storage.write(key: 'password', value: password);
               Utils.getUserDataFromLocalStorage();
-              FirebaseApi().storeToken(4);
+              FirebaseApi().storeToken();
             } else {
               // Clear stored credentials
               await Utils.storage.deleteAll();
             }
-
-            // Extract and store user data from the response
-            final userData = responseBody['data'];
-            await Utils.storage.write(key: 'userData', value: jsonEncode(userData));
-            print('local storage user data :${Utils.storage.read(key: 'userData')}');
-
             Utils.isLoggedIn = true;
           } else {
             throw Exception(responseBody['message'] ?? 'Login failed');
@@ -144,10 +147,9 @@ class _LoginPageState extends State<LoginPage> {
                         focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(
                           color: PRIMARY_COLOR
-                      )
-                    ),
-                          border: OutlineInputBorder(),
-                          ),
+                          )
+                        ),
+                        border: OutlineInputBorder(),),
                     ),
                   ],
                 ),
@@ -266,6 +268,11 @@ class _LoginPageState extends State<LoginPage> {
                 //   ),
                 // ),
                 SizedBox(height: 25,),
+                // InkWell(
+                //   onTap: (){
+                //     Navigator.push(context, MaterialPageRoute(builder: (context) => DeliveryBoyScreen(),));
+                //   },
+                //     child: Text('DeliveryBoy',style: TextStyle(color: Colors.black),))
               ],
             ),
           ),

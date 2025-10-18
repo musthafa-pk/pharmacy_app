@@ -5,6 +5,7 @@ import 'package:another_flushbar/flushbar_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:pharmacy_app/Constants/appColors.dart';
 import 'package:pharmacy_app/views/loginPage.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +13,9 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import '../res/app_url.dart';
 
 class Utils {
 
@@ -27,12 +31,12 @@ class Utils {
     FocusScope.of(context).requestFocus(nextFocus);
   }
 
-
   static toastMessage(String message){
     Fluttertoast.showToast(msg: message,
       backgroundColor: Colors.black,
       textColor: Colors.white,
     );}
+
   static flushBarErrorMessage(String message , BuildContext context){
     showFlushbar(context: context,
       flushbar: Flushbar(
@@ -50,6 +54,7 @@ class Utils {
         duration: const Duration(seconds: 3),
       )..show(context),
     );}
+
   static flushBarSuccessMessage(String message , BuildContext context){
     showFlushbar(context: context,
       flushbar: Flushbar(
@@ -107,11 +112,15 @@ class Utils {
   }
 
   static void logout(BuildContext context) async {
-    await storage.deleteAll();
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    await preferences.clear();
+
     isLoggedIn = false;
+
     Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage(),));
     flushBarSuccessMessage('Logged Out...!', context);
   }
+
   static String formatDate(String dateString) {
     try {
       // Parse the string to DateTime
@@ -190,7 +199,7 @@ class Utils {
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: PRIMARY_COLOR),
               onPressed: () {
-               Utils.printQrCode(qrData.toString());
+               Utils.printQrCode(qrData.toString(),userName);
               },
               child: Text(
                 'Print',
@@ -203,7 +212,8 @@ class Utils {
       },
     );
   }
-  static Future<void> printQrCode(String qrData) async {
+
+  static Future<void> printQrCode(String qrData,String userName) async {
     final pdf = pw.Document();
 
     // Define custom page size (e.g., 3 inches by 2 inches)
@@ -228,7 +238,7 @@ class Utils {
               ),
               pw.SizedBox(height: 5), // Spacing between QR code and text
               pw.Text(
-                'USER NAME HERE',
+                '${userName.toUpperCase().toString()}',
                 style: pw.TextStyle(
                   fontSize: 12, // Adjust font size for smaller print
                   fontWeight: pw.FontWeight.bold,
@@ -266,6 +276,113 @@ class Utils {
       // If more than a day, show the formatted date and time
       return DateFormat('dd MMM yyyy, hh:mm a').format(notificationDate);
     }
+  }
+
+  static Widget buildGooglePlacesTextField({
+    required String label,
+    required TextEditingController addressController,
+    required TextEditingController pincodeController,
+    required Function(Map<String, dynamic>) onAddressSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            // fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GooglePlaceAutoCompleteTextField(
+          textEditingController: addressController,
+          googleAPIKey: AppUrl.gmap,
+          inputDecoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey[200],
+            border: InputBorder.none
+            // enabledBorder: OutlineInputBorder(
+            //   borderRadius: BorderRadius.circular(8),
+            //   borderSide: BorderSide(color: Colors.white),
+            // ),
+            // focusedBorder: OutlineInputBorder(
+            //   borderRadius: BorderRadius.circular(8),
+            //   borderSide: BorderSide(color: Colors.white, width: 2),
+            // ),
+          ),
+          debounceTime: 800,
+          countries: ["IN"], // Restrict to India (change as needed)
+          isLatLngRequired: true,
+          getPlaceDetailWithLatLng: (prediction) async {
+            print("Place details: ${prediction.lng} , ${prediction.lat}");
+
+            // Fetch pincode
+            String? pincode = await getPincodeFromLatLng(prediction.lat!, prediction.lng!);
+
+            // Preserve cursor position
+            String newText = prediction.description!;
+            int cursorPosition = addressController.selection.baseOffset;
+
+            // Update controllers safely
+            addressController.value = TextEditingValue(
+              text: newText,
+              selection: TextSelection.collapsed(offset: cursorPosition),
+            );
+
+            pincodeController.text = pincode ?? "N/A";
+
+            // Add address data
+            Map<String, dynamic> selectedAddress = {
+              "address": newText,
+              "latitude": prediction.lat.toString(),
+              "longitude": prediction.lng.toString(),
+              "pincode": pincode ?? "N/A"
+            };
+
+            // Callback update
+            onAddressSelected(selectedAddress);
+          },
+          itemClick: (prediction) {
+            // Preserve cursor position
+            String newText = prediction.description!;
+            int cursorPosition = addressController.selection.baseOffset;
+
+            addressController.value = TextEditingValue(
+              text: newText,
+              selection: TextSelection.collapsed(offset: cursorPosition),
+            );
+          },
+          seperatedBuilder: const Divider(),
+          boxDecoration: BoxDecoration(
+            border: Border.all(color: Colors.white,),
+            borderRadius: BorderRadius.circular(8)
+          ),
+        ),
+      ],
+    );
+  }
+
+  static Future<String?> getPincodeFromLatLng(String lat, String lng) async {
+    String apiKey = AppUrl.gmap; // Replace with your API Key
+    String url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$apiKey";
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      var data = json.decode(response.body);
+      if (data["status"] == "OK") {
+        for (var result in data["results"]) {
+          for (var component in result["address_components"]) {
+            if (component["types"].contains("postal_code")) {
+              return component["long_name"];
+            }
+          }
+        }
+      }
+    }
+    return null; // If pincode is not found
   }
 
 }

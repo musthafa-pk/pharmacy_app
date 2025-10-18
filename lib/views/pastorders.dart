@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:pdf/pdf.dart';
 import 'package:pharmacy_app/res/app_url.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart'; // Import shimmer package
 import 'package:printing/printing.dart';
 import '../../Constants/appColors.dart';
@@ -31,13 +32,16 @@ class _PastOrdersPageState extends State<PastOrdersPage> {
   }
 
   Future<void> fetchPastOrders() async {
+
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userID = await preferences.getString('userID');
     setState(() {
       isLoading = true; // Start shimmer
     });
 
     try {
       // Body for the API request
-      final Map<String, dynamic> requestBody = {"chemistId": 4};
+      final Map<String, dynamic> requestBody = {"chemistId": int.parse(userID.toString())};
 
       // Make an HTTP POST request
       final response = await http.post(
@@ -123,7 +127,7 @@ class _PastOrdersPageState extends State<PastOrdersPage> {
                 children: [
                   ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: orderStatus == 'packed' ? Colors.green : Colors.red,
+                      backgroundColor: orderStatus == 'packed' ? PRIMARY_COLOR : Colors.red,
                       child: Icon(
                         orderStatus == 'packed' ? Icons.check : Icons.cancel,
                         color: Colors.white,
@@ -336,29 +340,30 @@ class _PastOrdersPageState extends State<PastOrdersPage> {
       ),
     );
   }
-  Future<void> _printQrCode(String qrData) async {
-    final pdf = pw.Document();
 
-    pdf.addPage(
-      pw.Page(
-        build: (pw.Context context) => pw.Center(
-          child: pw.Container(
-            width: 200,
-            height: 200,
-            child: pw.BarcodeWidget(
-              barcode: pw.Barcode.qrCode(),
-              data: qrData,
-              width: 200,
-              height: 200,
-            ),
-          ),
-        ),
-      ),
-    );
-
-    // Send the PDF to a printer
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
-  }
+  // Future<void> _printQrCode(String qrData) async {
+  //   final pdf = pw.Document();
+  //
+  //   pdf.addPage(
+  //     pw.Page(
+  //       build: (pw.Context context) => pw.Center(
+  //         child: pw.Container(
+  //           width: 200,
+  //           height: 200,
+  //           child: pw.BarcodeWidget(
+  //             barcode: pw.Barcode.qrCode(),
+  //             data: qrData,
+  //             width: 200,
+  //             height: 200,
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  //
+  //   // Send the PDF to a printer
+  //   await Printing.layoutPdf(
+  //     onLayout: (PdfPageFormat format) async => pdf.save(),
+  //   );
+  // }
 }

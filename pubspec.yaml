@@ -53,6 +53,18 @@ dependencies:
   url_launcher: ^6.1.9
   shared_preferences: ^2.3.3
   fl_chart: ^0.69.2
+  file_picker: ^8.3.1
+  image_picker: ^1.1.2
+  google_maps_flutter: ^2.10.0
+  google_places_flutter: ^2.0.9
+  geolocator: ^13.0.2
+  geocoding: ^3.0.0
+  flutter_google_maps_webservices: ^1.1.1
+  upi_india: ^3.0.1
+  razorpay_flutter: ^1.4.0
+  web_socket_channel: ^3.0.2
+
+
 
 dev_dependencies:
   flutter_test:
@@ -85,7 +97,10 @@ flutter:
     - assets/images/doc.png
     - assets/images/medicine.png
     - assets/lottie/greenmed.json
+    - assets/lottie/payement.json
+    - assets/lottie/profiledone1.json
     - assets/images/wrong-password.png
+    - assets/images/s.jpg
     - assets/sound/msgsound.mp3
 
   # An image asset can refer to one or more resolution-specific "variants", see
@@ -100,17 +115,23 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
-    - family: Outfit
+    - family: AeonikTRIAL
       fonts:
-        - asset: assets/font/Outfit-Regular.ttf
-        - asset: assets/font/Outfit-SemiBold.ttf
-        - asset: assets/font/Outfit-Black.ttf
-        - asset: assets/font/Outfit-Bold.ttf
-        - asset: assets/font/Outfit-ExtraBold.ttf
-        - asset: assets/font/Outfit-ExtraLight.ttf
-        - asset: assets/font/Outfit-Light.ttf
-        - asset: assets/font/Outfit-Medium.ttf
-        - asset: assets/font/Outfit-Thin.ttf
+#        - asset: assets/font/Outfit-Regular.ttf
+#        - asset: assets/font/Outfit-SemiBold.ttf
+#        - asset: assets/font/Outfit-Black.ttf
+#        - asset: assets/font/Outfit-Bold.ttf
+#        - asset: assets/font/Outfit-ExtraBold.ttf
+#        - asset: assets/font/Outfit-ExtraLight.ttf
+#        - asset: assets/font/Outfit-Light.ttf
+#        - asset: assets/font/Outfit-Medium.ttf
+#        - asset: assets/font/Outfit-Thin.ttf
+        - asset: assets/font/AeonikTRIAL-Bold.otf
+        - asset: assets/font/AeonikTRIAL-BoldItalic.otf
+        - asset: assets/font/AeonikTRIAL-Light.otf
+        - asset: assets/font/AeonikTRIAL-LightItalic.otf
+        - asset: assets/font/AeonikTRIAL-Regular.otf
+        - asset: assets/font/AeonikTRIAL-RegularItalic.otf
 
   #
   # For details regarding fonts from package dependencies,

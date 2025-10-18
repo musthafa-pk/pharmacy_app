@@ -1,6 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
 import 'package:pharmacy_app/Constants/appColors.dart';
+import 'package:pharmacy_app/res/app_url.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Collectionspage extends StatefulWidget {
   const Collectionspage({super.key});
@@ -10,49 +14,55 @@ class Collectionspage extends StatefulWidget {
 }
 
 class _CollectionspageState extends State<Collectionspage> {
-  double walletBalance = 1250.75; // Example balance
-  double grandTotal = 7220.0; // Example grand total from API
-  List<double> totalAmounts = [1440, 1420, 840, 800, 1900, 820]; // Example data
-
-  // List of months
-  List<String> filters = [
-    'Jan - Mar',
-    'Apr - Jun',
-    'Jul - Sep',
-    'Oct - Dec',
-  ];
-  String selectedFilter = 'Jan - Mar';
-
-  // Filtered data based on selection
-  List<double> filteredAmounts = [];
+  List<dynamic> dayWiseResponse = [];
+  bool isLoading = true;
+  bool hasError = false;
+  String selectedMonth = DateTime.now().month.toString(); // Set to current month
+  String selectedYear = DateTime.now().year.toString(); // Set to current year
 
   @override
   void initState() {
     super.initState();
-    filteredAmounts = totalAmounts; // Initialize with all data
+    fetchData();
   }
-  void applyFilter(String filter) {
-    setState(() {
-      selectedFilter = filter;
 
-      // Example logic for filtering data
-      switch (filter) {
-        case 'Jan - Mar':
-          filteredAmounts = totalAmounts.sublist(0, 3); // First 3 months
-          break;
-        case 'Apr - Jun':
-          filteredAmounts = totalAmounts.sublist(3, 6); // Next 3 months
-          break;
-        case 'Jul - Sep':
-          filteredAmounts = [0, 0, 0]; // Placeholder data for now
-          break;
-        case 'Oct - Dec':
-          filteredAmounts = [0, 0, 0]; // Placeholder data for now
-          break;
-        default:
-          filteredAmounts = totalAmounts;
+  // Fetch data from API
+  Future<void> fetchData() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userID = await preferences.getString('userID');
+    String apiUrl = AppUrl.orderSummery; // Replace with your API URL
+    const Map<String, String> headers = {'Content-Type': 'application/json'};
+    final Map<String, dynamic> requestBody = {
+      "chemistId": int.parse(userID.toString()),
+      // "month": '${selectedMonth.padLeft(2, '0')}/$selectedYear', // Format month and year
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: headers,
+        body: json.encode(requestBody),
+      );
+      print('rereee:${response.body}');
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success']) {
+          setState(() {
+            dayWiseResponse = data['dayWiseResponse'];
+            isLoading = false;
+          });
+        } else {
+          throw Exception('Data fetch unsuccessful');
+        }
+      } else {
+        throw Exception('Failed to load data');
       }
-    });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        hasError = true;
+      });
+    }
   }
 
   @override
@@ -63,9 +73,13 @@ class _CollectionspageState extends State<Collectionspage> {
         title: Text('Collections', style: TextStyle(color: TextColorWhite)),
         backgroundColor: PRIMARY_COLOR,
       ),
-      body: Column(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : hasError
+          ? const Center(child: Text('Failed to load data'))
+          : Column(
         children: [
-          // Wallet Balance Section
+          // Header Section
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16.0),
@@ -79,25 +93,16 @@ class _CollectionspageState extends State<Collectionspage> {
             child: Column(
               children: [
                 const Text(
-                  'Wallet Balance',
+                  'Total Collections',
                   style: TextStyle(fontSize: 18, color: Colors.white70),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  '₹${walletBalance.toStringAsFixed(2)}',
+                  '₹${dayWiseResponse.fold<int>(0, (prev, element) => prev + (element['totalAmount'] as int))}',
                   style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Grand Total: ₹${grandTotal.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white70,
                   ),
                 ),
               ],
@@ -105,51 +110,97 @@ class _CollectionspageState extends State<Collectionspage> {
           ),
 
           const SizedBox(height: 20),
-          // Filter Section
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Filter by Months:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                DropdownButton<String>(
-                  value: selectedFilter,
-                  icon: const Icon(Icons.arrow_drop_down),
-                  items: filters.map((String filter) {
-                    return DropdownMenuItem<String>(
-                      value: filter,
-                      child: Text(filter),
-                    );
-                  }).toList(),
-                  onChanged: (String? newFilter) {
-                    if (newFilter != null) {
-                      applyFilter(newFilter);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
+          Spacer(),
+          // Month Selection Dropdown
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          //   child: Row(
+          //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //     children: [
+          //       const Text(
+          //         'Select Month:',
+          //         style: TextStyle(
+          //           fontSize: 16,
+          //           fontWeight: FontWeight.bold,
+          //         ),
+          //       ),
+          //       DropdownButton<String>(
+          //         value: selectedMonth,
+          //         items: List.generate(12, (index) {
+          //           final monthValue = (index + 1).toString();
+          //           final monthName = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][index];
+          //           return DropdownMenuItem<String>(
+          //             value: monthValue,
+          //             child: Text(monthName),
+          //           );
+          //         }),
+          //         onChanged: (String? newMonth) {
+          //           if (newMonth != null) {
+          //             setState(() {
+          //               selectedMonth = newMonth;
+          //               isLoading = true;
+          //             });
+          //             fetchData();
+          //           }
+          //         },
+          //       ),
+          //     ],
+          //   ),
+          // ),
+          //
+          // const SizedBox(height: 20),
+          //
+          // // Year Selection Dropdown
+          // Padding(
+          //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          //   child: Row(
+          //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          //     children: [
+          //       const Text(
+          //         'Select Year:',
+          //         style: TextStyle(
+          //           fontSize: 16,
+          //           fontWeight: FontWeight.bold,
+          //         ),
+          //       ),
+          //       DropdownButton<String>(
+          //         value: selectedYear,
+          //         items: List.generate(51, (index) {
+          //           final yearValue = (DateTime.now().year + index).toString(); // Generate next 50 years
+          //           return DropdownMenuItem<String>(
+          //             value: yearValue,
+          //             child: Text(yearValue),
+          //           );
+          //         }),
+          //         onChanged: (String? newYear) {
+          //           if (newYear != null) {
+          //             setState(() {
+          //               selectedYear = newYear;
+          //               isLoading = true;
+          //             });
+          //             fetchData();
+          //           }
+          //         },
+          //       ),
+          //     ],
+          //   ),
+          // ),
 
-          SizedBox(height: 10,),
+          const SizedBox(height: 20),
 
           // Bar Chart Section
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             height: 250,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: 2000,
+                maxY: dayWiseResponse
+                    .map((e) => e['totalAmount'])
+                    .reduce((a, b) => a > b ? a : b)
+                    .toDouble(),
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
-                    // tooltipDecoration: BoxDecoration(
-                    //   color: Colors.blueAccent, // Tooltip background color
-                    //   borderRadius: BorderRadius.circular(8),
-                    // ),
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
                         '₹${rod.toY.toStringAsFixed(2)}',
@@ -160,36 +211,36 @@ class _CollectionspageState extends State<Collectionspage> {
                 ),
                 titlesData: FlTitlesData(
                   leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) => Text(
-                        value.toInt().toString(),
-                        style: const TextStyle(color: Colors.black),
-                      ),
-                    ),
+                    sideTitles: SideTitles(showTitles: false), // Remove left-side values
                   ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      getTitlesWidget: (value, meta) => Text(
-                        'Day ${value.toInt() + 1}',
-                        style: const TextStyle(color: Colors.black),
-                      ),
+                      getTitlesWidget: (value, meta) {
+                        int index = value.toInt();
+                        if (index < 0 || index >= dayWiseResponse.length) {
+                          return const SizedBox.shrink();
+                        }
+                        return Text(
+                          dayWiseResponse[index]['date'].toString().split('-')[2], // Show day
+                          style: const TextStyle(color: Colors.black),
+                        );
+                      },
                     ),
                   ),
                   rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
-
+                gridData: FlGridData(show: false), // Remove dotted lines
                 borderData: FlBorderData(show: false),
-                barGroups: totalAmounts
+                barGroups: dayWiseResponse
                     .asMap()
                     .entries
                     .map((entry) => BarChartGroupData(
                   x: entry.key,
                   barRods: [
                     BarChartRodData(
-                      toY: entry.value,
+                      toY: entry.value['totalAmount'].toDouble(),
                       color: PRIMARY_COLOR,
                       width: 16,
                     ),
@@ -197,12 +248,10 @@ class _CollectionspageState extends State<Collectionspage> {
                 ))
                     .toList(),
               ),
-            )
-
+            ),
           ),
 
           const SizedBox(height: 20),
-
         ],
       ),
     );

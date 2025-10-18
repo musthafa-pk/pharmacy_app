@@ -5,6 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:pharmacy_app/Constants/appColors.dart';
 import 'package:pharmacy_app/api/firebase_api.dart';
 import 'package:pharmacy_app/api/localNotificationService.dart';
+import 'package:pharmacy_app/views/medOne/editRoutine.dart';
 import 'package:pharmacy_app/views/splash1.dart';
 
 import 'firebase_options.dart';
@@ -54,9 +55,10 @@ class _MyAppState extends State<MyApp> {
       title: 'Pharmacy App',
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: 'Outfit',
+        fontFamily: 'AeonikTRIAL',
         scaffoldBackgroundColor: TextColorWhite,
       ),
+      // home: EditDailyRoutine(),
       home: Splash1(),
     );
   }

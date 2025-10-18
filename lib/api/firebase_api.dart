@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../res/app_url.dart';
 import 'package:http/http.dart' as http;
@@ -24,14 +25,16 @@ class FirebaseApi {
     return fCMToken;
   }
 
-  Future<void> storeToken(int id) async {
+  Future<void> storeToken() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    String? userID = preferences.getString('userID');
     String? fcmToken = await FirebaseApi().initNOtification();
     final url = Uri.parse(AppUrl.storeToken);
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          "id": id,
+          "id": int.parse(userID.toString()),
           "token": fcmToken,
         }),
       );

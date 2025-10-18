@@ -122,7 +122,7 @@ class _OTPPageState extends State<OTPPage> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter the OTP';
-                      } else if (value.length != 5) {
+                      } else if (value.length <= 5) {
                         return 'OTP must be 6 digits';
                       }
                       return null;
